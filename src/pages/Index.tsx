@@ -8,6 +8,12 @@ import Icon from '@/components/ui/icon';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+
+interface PricePoint {
+  time: string;
+  price: number;
+}
 
 interface CryptoData {
   id: string;
@@ -17,6 +23,7 @@ interface CryptoData {
   change24h: number;
   volume: number;
   marketCap: number;
+  priceHistory: PricePoint[];
 }
 
 interface Signal {
@@ -34,12 +41,77 @@ interface Alert {
   active: boolean;
 }
 
+const generatePriceHistory = (currentPrice: number, change24h: number): PricePoint[] => {
+  const points: PricePoint[] = [];
+  const hours = 24;
+  const startPrice = currentPrice / (1 + change24h / 100);
+  
+  for (let i = 0; i < hours; i++) {
+    const progress = i / (hours - 1);
+    const trend = startPrice + (currentPrice - startPrice) * progress;
+    const noise = (Math.random() - 0.5) * (currentPrice * 0.02);
+    const price = trend + noise;
+    
+    points.push({
+      time: `${i}:00`,
+      price: parseFloat(price.toFixed(2))
+    });
+  }
+  
+  return points;
+};
+
 const mockCryptoData: CryptoData[] = [
-  { id: '1', name: 'Bitcoin', symbol: 'BTC', price: 43250.50, change24h: 2.45, volume: 28500000000, marketCap: 847000000000 },
-  { id: '2', name: 'Ethereum', symbol: 'ETH', price: 2285.30, change24h: -1.23, volume: 15200000000, marketCap: 275000000000 },
-  { id: '3', name: 'Solana', symbol: 'SOL', price: 98.75, change24h: 5.67, volume: 2800000000, marketCap: 42000000000 },
-  { id: '4', name: 'Cardano', symbol: 'ADA', price: 0.52, change24h: -0.85, volume: 320000000, marketCap: 18000000000 },
-  { id: '5', name: 'Polkadot', symbol: 'DOT', price: 7.34, change24h: 3.21, volume: 280000000, marketCap: 9500000000 },
+  { 
+    id: '1', 
+    name: 'Bitcoin', 
+    symbol: 'BTC', 
+    price: 43250.50, 
+    change24h: 2.45, 
+    volume: 28500000000, 
+    marketCap: 847000000000,
+    priceHistory: generatePriceHistory(43250.50, 2.45)
+  },
+  { 
+    id: '2', 
+    name: 'Ethereum', 
+    symbol: 'ETH', 
+    price: 2285.30, 
+    change24h: -1.23, 
+    volume: 15200000000, 
+    marketCap: 275000000000,
+    priceHistory: generatePriceHistory(2285.30, -1.23)
+  },
+  { 
+    id: '3', 
+    name: 'Solana', 
+    symbol: 'SOL', 
+    price: 98.75, 
+    change24h: 5.67, 
+    volume: 2800000000, 
+    marketCap: 42000000000,
+    priceHistory: generatePriceHistory(98.75, 5.67)
+  },
+  { 
+    id: '4', 
+    name: 'Cardano', 
+    symbol: 'ADA', 
+    price: 0.52, 
+    change24h: -0.85, 
+    volume: 320000000, 
+    marketCap: 18000000000,
+    priceHistory: generatePriceHistory(0.52, -0.85)
+  },
+  { 
+    id: '5', 
+    name: 'Polkadot', 
+    symbol: 'DOT', 
+    price: 7.34, 
+    change24h: 3.21, 
+    volume: 280000000, 
+    marketCap: 9500000000,
+    priceHistory: generatePriceHistory(7.34, 3.21)
+  },
 ];
 
 const mockSignals: Signal[] = [
@@ -142,6 +214,20 @@ const Index = () => {
                           {crypto.change24h >= 0 ? '+' : ''}{crypto.change24h.toFixed(2)}%
                         </Badge>
                       </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <ResponsiveContainer width="100%" height={80}>
+                        <LineChart data={crypto.priceHistory}>
+                          <Line 
+                            type="monotone" 
+                            dataKey="price" 
+                            stroke={crypto.change24h >= 0 ? "hsl(var(--success))" : "hsl(var(--destructive))"}
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border">
